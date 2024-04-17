@@ -2,8 +2,6 @@
 import chalk from 'chalk'; // 命令行美化工具
 import ora from 'ora'; // 命令行 loading 效果
 import inquirer from 'inquirer'; // 命令行交互工具
-import fs from 'fs-extra'; // 传统fs复制文件目录需要加很多判断比较麻烦,fs-extra解决了这个问题
-import path from 'path'; // 命令行交互工具
 import { program } from 'commander'; // 引入commander
 import download from 'download-git-repo';
 // 定义 create 命令
@@ -37,8 +35,13 @@ program
       const syncTemplate = ora('同步模板中....');
       syncTemplate.start();
       // 复制模板到目标目录
+      /**
+       * 解释一下https://github.com:bingmada/my-cli#master 这个怎么写
+       * 我的git clone地址为https://github.com/bingmada/my-cli.git
+       * https://github.com + : + bingmada/my-cli + # + 分支名称 
+       */
       download(
-        'https://github.com/bingmada/my-cli.git#master',
+        'https://github.com:bingmada/my-cli#master',
         `./${projectName}`,
         {
           map: (file) => {
@@ -50,11 +53,11 @@ program
           },
         },
         function (err) {
-          syncTemplate.succeed();
           if (err) {
             console.error(err);
             return;
           }
+          syncTemplate.succeed();
           console.log(
             chalk.green(
               chalk.blue.underline.bold(projectName) + ' 项目创建成功!'
@@ -75,6 +78,12 @@ program
     }
   });
 
+// 监听用户输入--help
+program.on('--help', function () {
+  console.log('\nExamples:')
+  console.log(`my-cli create <project-name>`)
+})
+
 /**
  * 处理用户执行时输入的参数,默认值是process.argv
  * process.argv 是 nodejs 提供的属性
@@ -83,8 +92,3 @@ program
  * 以下这行代码也可以写为 program.parse(process.argv);
  */
 program.parse();
-// 监听用户输入--help
-// program.on('--help', function () {
-//   console.log('\nExamples:')
-//   console.log(`my-cli create <project-name>`)
-// })

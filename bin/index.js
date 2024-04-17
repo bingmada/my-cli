@@ -5,7 +5,7 @@ import inquirer from 'inquirer'; // 命令行交互工具
 import fs from 'fs-extra'; // 传统fs复制文件目录需要加很多判断比较麻烦,fs-extra解决了这个问题
 import path from 'path'; // 命令行交互工具
 import { program } from 'commander'; // 引入commander
-
+import download from 'download-git-repo';
 // 定义 create 命令
 program
   .command('create') // 配置命令的名字
@@ -37,23 +37,39 @@ program
       const syncTemplate = ora('同步模板中....');
       syncTemplate.start();
       // 复制模板到目标目录
-      await fs.copySync(
-        path.resolve(option1.localPath, choose),
-        `./${projectName}`
+      download(
+        'https://github.com/bingmada/my-cli.git#master',
+        `./${projectName}`,
+        {
+          map: (file) => {
+            file.path = file.path.replace(`templates\\${choose}`, '');
+            return file;
+          },
+          filter: (file) => {
+            return file.path.indexOf(`templates\\${choose}`) != -1;
+          },
+        },
+        function (err) {
+          syncTemplate.succeed();
+          if (err) {
+            console.error(err);
+            return;
+          }
+          console.log(
+            chalk.green(
+              chalk.blue.underline.bold(projectName) + ' 项目创建成功!'
+            )
+          );
+          console.log(`
+              __      __   __     __       _ _ _
+             /  |    /  |  | |   / /    ___| (_) |
+            / /| |  / /| |  |_| /_/___ / __| | | |
+           / /  | |/ /  | |   | |  ___| (__| | |_|
+          /_/    |__/    |_|  |_|      |___|_|_(_)
+        
+          `);
+        }
       );
-      syncTemplate.succeed();
-
-      console.log(
-        chalk.green(chalk.blue.underline.bold(projectName) + ' 项目创建成功!')
-      );
-      console.log(`
-          __      __   __     __       _ _ _
-         /  |    /  |  | |   / /    ___| (_) |
-        / /| |  / /| |  |_| /_/___ / __| | | |
-       / /  | |/ /  | |   | |  ___| (__| | |_|
-      /_/    |__/    |_|  |_|      |___|_|_(_)
-    
-      `);
     } catch (err) {
       console.error(err);
     }
@@ -67,3 +83,8 @@ program
  * 以下这行代码也可以写为 program.parse(process.argv);
  */
 program.parse();
+// 监听用户输入--help
+// program.on('--help', function () {
+//   console.log('\nExamples:')
+//   console.log(`my-cli create <project-name>`)
+// })
